@@ -1,0 +1,181 @@
+@startuml
+top to bottom direction
+skinparam classAttributeIconSize 0
+
+' =========================
+' INTERFACE
+' =========================
+
+interface Autenticavel {
+  + login(usuario: String, senha: String): Boolean
+  + logout(): void
+  + trocarSenha(senhaAntiga: String, senhaNova: String): Boolean
+}
+
+' =========================
+' CLASSES ABSTRATAS
+' =========================
+
+abstract class Usuario {
+  - id: Integer
+  - nome: String
+  - email: String
+  - senha: String
+  - dataCadastro: Date
+  + {abstract} getPermissoes(): List
+  + atualizarDados(): void
+}
+
+' =========================
+' HERANÇA
+' =========================
+
+Usuario <|-- Atleta
+Usuario <|-- Operador
+Autenticavel <|.. Usuario
+
+' =========================
+' CLASSE ATLETA
+' =========================
+
+class Atleta {
+  - pais: String
+  - dataNascimento: Date
+  - modalidades: List
+
+  + inscreverEmCompeticao(competicao: Competicao): Boolean
+  + consultarInscricoes(): List
+  + getPermissoes(): List
+  + verificarPaisPorModalidade(modalidade: String): Boolean
+}
+
+' =========================
+' CLASSE OPERADOR
+' =========================
+
+class Operador {
+  - cargo: String
+  - nivelAcesso: Integer
+
+  + cadastrarCompeticao(competicao: Competicao): void
+  + alocarLocal(competicao: Competicao, local: Local): Boolean
+  + registrarResultados(resultado: Resultado): void
+  + gerarRelatorioMedalhas(): Relatorio
+  + getPermissoes(): List
+}
+
+' =========================
+' CLASSES DE DOMÍNIO
+' =========================
+
+class Competicao {
+  - id: Integer
+  - nomeModalidade: String
+  - data: Date
+  - horario: String
+  - status: String
+
+  + adicionarAtleta(atleta: Atleta): Boolean
+  + removerAtleta(atleta: Atleta): Boolean
+  + definirResultado(ouro: Atleta, prata: Atleta, bronze: Atleta): void
+  + getAtletasInscritos(): List
+  + getLocalAlocado(): Local
+  + setLocal(local: Local): void
+}
+
+class Local {
+  - id: Integer
+  - nome: String
+  - endereco: String
+  - capacidade: Integer
+
+  + verificarDisponibilidade(data: Date, horario: String): Boolean
+  + alocar(competicao: Competicao): Boolean
+  + getCompeticaoAlocada(data: Date, horario: String): Competicao
+}
+
+class Resultado {
+  - id: Integer
+  - dataRegistro: Date
+  - atletaOuro: Atleta
+  - atletaPrata: Atleta
+  - atletaBronze: Atleta
+
+  + validarPódio(): Boolean
+  + getMedalhaPorAtleta(atleta: Atleta): String
+}
+
+class Pais {
+  - codigo: String
+  - nome: String
+  - continente: String
+  - medalhasOuro: Integer
+  - medalhasPrata: Integer
+  - medalhasBronze: Integer
+
+  + getTotalMedalhas(): Integer
+  + getQuadroMedalhas(): String
+  + adicionarMedalha(tipo: String): void
+}
+
+class Inscricao {
+  - id: Integer
+  - dataInscricao: Date
+  - status: String
+  - paisRepresentado: String
+
+  + cancelar(): void
+  + confirmar(): void
+  + validarUnicoPaisPorModalidade(): Boolean
+}
+
+class Relatorio {
+  - id: Integer
+  - dataGeracao: Date
+  - tipo: String
+  - conteudo: String
+
+  + exportarPDF(): String
+  + exportarCSV(): String
+  + gerarQuadroMedalhas(paises: List): String
+}
+
+' =========================
+' POSICIONAMENTO
+' =========================
+
+Usuario -[hidden]down- Atleta
+Usuario -[hidden]down- Operador
+
+Atleta -[hidden]right- Competicao
+Competicao -[hidden]right- Local
+Local -[hidden]down- Resultado
+Resultado -[hidden]left- Pais
+Pais -[hidden]left- Inscricao
+
+' =========================
+' RELACIONAMENTOS
+' =========================
+
+Competicao "*" *-- "1" Resultado
+
+Competicao "1" o-- "0..1" Local
+
+Pais "1" o-- "0..*" Atleta
+
+Competicao "1" -- "0..*" Inscricao
+Atleta "1" -- "0..*" Inscricao
+
+Operador --> Resultado : registra
+Operador --> Relatorio : gera
+Atleta --> Resultado : consulta
+
+Competicao "1" -- "0..*" Atleta : participantes
+
+Resultado --> Atleta : ouro
+Resultado --> Atleta : prata
+Resultado --> Atleta : bronze
+
+Pais --> Resultado : possui medalhas
+
+@enduml
