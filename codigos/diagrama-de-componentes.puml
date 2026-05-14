@@ -1,0 +1,116 @@
+@startuml diagramadecomponentes
+title Diagrama de Componentes - Sistema de Gestão das Olimpíadas (SGO)
+
+left to right direction
+
+skinparam componentStyle uml2
+skinparam backgroundColor #FAFAFA
+
+skinparam package {
+  BackgroundColor #F0F3F5
+  BorderColor #2D3436
+  FontColor #2D3436
+  FontSize 11
+  FontStyle bold
+}
+
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #2D3436
+}
+
+' =========================
+' CAMADA DE APRESENTAÇÃO
+' =========================
+
+package "Camada de Apresentação" #FFEAA7 {
+  [Interface de Usuário\n(Web/Mobile)] as UI
+  [Controllers\n(API REST)] as API
+  [DTOs + Validators] as DtoVal
+}
+
+' =========================
+' CAMADA DE NEGÓCIO
+' =========================
+
+package "Camada de Negócio" #D5E8D4 {
+
+  package "Fachada (SGO)" {
+    [SGOFacade] <<facade>> as Facade
+    [CompeticaoFacade] <<facade>> as CompFacade
+  }
+
+  package "Módulo de Autenticação\ne Segurança" #F8C471 {
+    interface "IAutenticacao" as IAuth
+    [AutenticacaoService] as AuthSvc
+    [JwtTokenProvider] as JWT
+    [AutenticacaoManager\n+ AutorizacaoManager] as AuthMgr
+  }
+
+  package "Módulo de Inscrições" {
+    interface "IInscricao" as IInsc
+    [InscricaoService] as InscSvc
+    [ValidacaoPais\n(Validador de Nacionalidade)] as ValPais
+    [InscricaoValidator] as InscVal
+  }
+
+  package "Módulo de Competições\ne Operação" {
+    interface "ICompeticao" as IComp
+    [CompeticaoService\n+ AtletaService] as CompSvc
+    [ValidacaoHorario\n(Validador de Conflitos)] as ValHorario
+  }
+
+  package "Módulo de Alocação" {
+    interface "IAlocacao" as IAloc
+    [LocalService] as LocalSvc
+    [ValidacaoDisponibilidade] as ValDisp
+  }
+
+  package "Módulo de Relatórios\ne Resultados" {
+    interface "IRelatorio" as IRel
+    [RelatorioService\n+ MedalhaService] as RelSvc
+    [ResultadoService\n+ PaisService] as ResSvc
+  }
+}
+
+' =========================
+' CAMADA DE INFRAESTRUTURA E DADOS
+' =========================
+
+package "Camada de Infraestrutura e Dados" #AED6F1 {
+  [Repositórios / DAO] as RepDAO
+  database "SGO_DB" as DB
+}
+
+' =========================
+' RELACIONAMENTOS
+' =========================
+
+UI --> API : solicita ações
+API --> DtoVal : valida/transforma
+API --> Facade : delega operações
+
+Facade --> IAuth
+Facade --> IComp
+Facade --> IInsc
+Facade --> IAloc
+Facade --> IRel
+
+CompFacade --> IComp
+
+IAuth --> AuthSvc
+IComp --> CompSvc
+IInsc --> InscSvc
+IAloc --> LocalSvc
+IRel --> RelSvc
+
+InscSvc ..> IComp : verifica disponibilidade
+LocalSvc ..> IComp : valida conflitos de horário
+
+AuthSvc --> RepDAO
+CompSvc --> RepDAO
+RelSvc --> RepDAO
+
+RepDAO --> DB
+
+@enduml

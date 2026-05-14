@@ -1,0 +1,73 @@
+@startuml diagramadeimplantacao
+title Diagrama de Implantação - Sistema de Gestão das Olimpíadas (SGO)
+
+left to right direction
+
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #FFFDE7
+  BorderColor #2D3436
+  FontColor #2D3436
+  FontStyle bold
+}
+
+' =========================
+' DISPOSITIVO DO USUÁRIO
+' =========================
+
+node "Dispositivo do Usuário" <<Device>> as Device #BBDEFB {
+  artifact "Navegador Web" as Browser
+  artifact "App Mobile" as MobileApp
+}
+
+note bottom of Device
+  Acesso para Atletas,
+  Operadores e Usuários.
+end note
+
+' =========================
+' SERVIDOR DE HOSPEDAGEM (FRONTEND)
+' =========================
+
+node "Servidor de Hospedagem\n(Frontend)" <<Server>> as FrontendServer #FFFDE7 {
+  artifact "SGO_Frontend (React/Static)" as FrontendApp
+}
+
+' =========================
+' SERVIDOR DE APLICAÇÃO (BACKEND)
+' =========================
+
+node "Servidor de Aplicação\n(Backend)" <<Server>> as BackendServer #FFFDE7 {
+  component "API REST (Controllers)" as APIRest
+  component "Módulo de Inscrições\n(InscricaoService + ValidacaoPais)" as ModInsc
+  component "Módulo de Competições\n(CompeticaoService + ValidacaoHorario)" as ModComp
+  component "Módulo de Alocação\n(LocalService)" as ModAloc
+  component "Módulo de Relatórios\n(RelatorioService + MedalhaService)" as ModRel
+  component "Auth Service (JWT)\n(AutenticacaoService + JwtTokenProvider)" as ModAuth
+}
+
+note bottom of ModAuth
+  Autenticação stateless via JWT.
+  Token gerado no login e validado
+  a cada requisição protegida.
+end note
+
+' =========================
+' SERVIDOR DE BANCO DE DADOS
+' =========================
+
+node "Servidor de Banco de Dados" <<Server>> as DBServer #FFFDE7 {
+  database "PostgreSQL" as PostgreSQL {
+    artifact "SGO_DB" as SGODB
+  }
+}
+
+' =========================
+' CONEXÕES
+' =========================
+
+Device --> FrontendServer : HTTPS
+FrontendServer --> BackendServer : REST
+BackendServer --> DBServer : JDBC/TCP
+
+@enduml
